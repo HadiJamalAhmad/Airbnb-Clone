@@ -8,9 +8,8 @@ function NavSearch() {
   const searchParams = useSearchParams();
   const { replace } = useRouter();
 
-  const [search, setSearch] = useState(
-    searchParams.get("search")?.toString() || ""
-  );
+  const currentSearch = searchParams.get("search")?.toString() || "";
+  const [search, setSearch] = useState(currentSearch);
 
   const handleSearch = useDebouncedCallback((value: string) => {
     const params = new URLSearchParams(searchParams);
@@ -25,10 +24,10 @@ function NavSearch() {
   }, 500);
 
   useEffect(() => {
-    if (!searchParams.get("search")) {
+    if (!currentSearch) {
       setSearch("");
     }
-  }, [searchParams.get("search")]);
+  }, [currentSearch]);
 
   return (
     <Input

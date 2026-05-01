@@ -19,7 +19,7 @@ function BookingWrapper({ propertyId, price, bookings }: BookingWrapperProps) {
       price,
       bookings,
     });
-  }, []);
+  }, [propertyId, price, bookings]);
 
   return (
     <>
