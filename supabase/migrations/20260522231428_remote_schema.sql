@@ -85,6 +85,7 @@ alter table "public"."Review" enable row level security;
 CREATE UNIQUE INDEX "Booking_pkey" ON public."Booking" USING btree (id);
 
 CREATE UNIQUE INDEX "Favorite_pkey" ON public."Favorite" USING btree (id);
+CREATE UNIQUE INDEX "Favorite_profileId_propertyId_key" ON public."Favorite" USING btree ("profileId","propertyId");
 
 CREATE UNIQUE INDEX "Profile_clerkId_key" ON public."Profile" USING btree ("clerkId");
 
@@ -103,6 +104,10 @@ alter table "public"."Profile" add constraint "Profile_pkey" PRIMARY KEY using i
 alter table "public"."Property" add constraint "Property_pkey" PRIMARY KEY using index "Property_pkey";
 
 alter table "public"."Review" add constraint "Review_pkey" PRIMARY KEY using index "Review_pkey";
+
+-- Ensure ratings are within expected range and prevent duplicate reviews per profile/property
+alter table "public"."Review" add constraint "Review_rating_check" CHECK (rating >= 1 AND rating <= 5);
+CREATE UNIQUE INDEX "Review_profileId_propertyId_key" ON public."Review" USING btree ("profileId","propertyId");
 
 alter table "public"."Booking" add constraint "Booking_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES public."Profile"("clerkId") ON UPDATE CASCADE ON DELETE CASCADE not valid;
 
@@ -139,10 +144,8 @@ grant insert on table "public"."Booking" to "anon";
 grant references on table "public"."Booking" to "anon";
 
 grant select on table "public"."Booking" to "anon";
-
-grant trigger on table "public"."Booking" to "anon";
-
-grant truncate on table "public"."Booking" to "anon";
+-- Removed TRIGGER and TRUNCATE grants for anon to limit unsafe operations
+-- Removed TRIGGER and TRUNCATE grants for anon to limit unsafe operations
 
 grant update on table "public"."Booking" to "anon";
 
@@ -152,9 +155,8 @@ grant insert on table "public"."Booking" to "authenticated";
 
 grant references on table "public"."Booking" to "authenticated";
 
-grant select on table "public"."Booking" to "authenticated";
+-- Removed TRIGGER and TRUNCATE grants for anon to limit unsafe operations
 
-grant trigger on table "public"."Booking" to "authenticated";
 
 grant truncate on table "public"."Booking" to "authenticated";
 
@@ -221,8 +223,7 @@ grant delete on table "public"."Profile" to "anon";
 grant insert on table "public"."Profile" to "anon";
 
 grant references on table "public"."Profile" to "anon";
-
-grant select on table "public"."Profile" to "anon";
+ -- Removed TRIGGER and TRUNCATE grants for anon to limit unsafe operations
 
 grant trigger on table "public"."Profile" to "anon";
 
@@ -261,6 +262,8 @@ grant update on table "public"."Profile" to "service_role";
 grant delete on table "public"."Property" to "anon";
 
 grant insert on table "public"."Property" to "anon";
+-- Removed TRIGGER and TRUNCATE grants for anon to limit unsafe operations
+
 
 grant references on table "public"."Property" to "anon";
 
@@ -350,7 +353,8 @@ grant update on table "public"."Review" to "service_role";
   to public
 with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Booking"."profileId"))));
+  WHERE ("Profile".clerkId = "Booking"."profileId"))));
+
 
 
 
@@ -361,7 +365,11 @@ with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Booking"."profileId"))));
+  WHERE ("Profile".clerkId = "Booking"."profileId"))));
+
+with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
+  FROM public."Profile"
+  WHERE ("Profile".clerkId = "Booking"."profileId"))));
 
 
 
@@ -372,7 +380,7 @@ using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Booking"."profileId"))));
+  WHERE ("Profile".clerkId = "Booking"."profileId"))));
 
 
 
@@ -383,7 +391,7 @@ using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 using (((auth.uid())::text = ( SELECT p."clerkId"
    FROM (public."Profile" p
-     JOIN public."Property" pr ON ((pr."profileId" = p.id)))
+    JOIN public."Property" pr ON ((pr."profileId" = p."clerkId")))
   WHERE (pr.id = "Booking"."propertyId"))));
 
 
@@ -395,7 +403,7 @@ using (((auth.uid())::text = ( SELECT p."clerkId"
   to public
 using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Favorite"."profileId"))));
+  WHERE ("Profile".clerkId = "Favorite"."profileId"))));
 
 
 
@@ -406,7 +414,7 @@ using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Favorite"."profileId"))));
+  WHERE ("Profile".clerkId = "Favorite"."profileId"))));
 
 
 
@@ -417,7 +425,7 @@ with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Favorite"."profileId"))));
+  WHERE ("Profile".clerkId = "Favorite"."profileId"))));
 
 
 
@@ -464,7 +472,7 @@ using (true);
   to public
 using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Property"."profileId"))));
+  WHERE ("Profile".clerkId = "Property"."profileId"))));
 
 
 
@@ -475,7 +483,7 @@ using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Property"."profileId"))));
+  WHERE ("Profile".clerkId = "Property"."profileId"))));
 
 
 
@@ -486,8 +494,11 @@ with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Property"."profileId"))));
+  WHERE ("Profile".clerkId = "Property"."profileId"))));
 
+  with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
+    FROM public."Profile"
+    WHERE ("Profile".clerkId = "Property"."profileId"))));
 
 
   create policy "Anyone can view reviews"
@@ -506,7 +517,7 @@ using (true);
   to public
 using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Review"."profileId"))));
+  WHERE ("Profile".clerkId = "Review"."profileId"))));
 
 
 
@@ -517,7 +528,7 @@ using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Review"."profileId"))));
+  WHERE ("Profile".clerkId = "Review"."profileId"))));
 
 
 
@@ -528,7 +539,11 @@ with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
   to public
 using (((auth.uid())::text = ( SELECT "Profile"."clerkId"
    FROM public."Profile"
-  WHERE ("Profile".id = "Review"."profileId"))));
+  WHERE ("Profile".clerkId = "Review"."profileId"))));
+
+  with check (((auth.uid())::text = ( SELECT "Profile"."clerkId"
+    FROM public."Profile"
+    WHERE ("Profile".clerkId = "Review"."profileId"))));
 
 
 
