@@ -154,20 +154,26 @@ export const createPropertyAction = async (
   const user = await getAuthUser();
   try {
     const rawData = Object.fromEntries(formData);
-    const file = formData.get("image") as File;
+    const files = formData.getAll("image") as File[];
 
-    const validatedFields = validateWithZodSchema(propertySchema, rawData);
-    const validatedFile = validateWithZodSchema(imageSchema, { image: file });
+const validatedFields = validateWithZodSchema(propertySchema, rawData);
 
-    const fullPath = await uploadImage(validatedFile.image);
+// Upload all images and join paths with comma
+const uploadedPaths: string[] = [];
+for (const file of files.slice(0, 4)) {
+  const validatedFile = validateWithZodSchema(imageSchema, { image: file });
+  const fullPath = await uploadImage(validatedFile.image);
+  uploadedPaths.push(fullPath);
+}
+const imagePaths = uploadedPaths.join(",");
 
-    await db.property.create({
-      data: {
-        ...validatedFields,
-        image: fullPath,
-        profileId: user.id,
-      },
-    });
+await db.property.create({
+  data: {
+    ...validatedFields,
+    image: imagePaths,
+    profileId: user.id,
+  },
+});
   } catch (error) {
     return renderError(error);
   }

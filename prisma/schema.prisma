@@ -30,7 +30,7 @@ model Property {
   name        String
   tagline     String
   category    String
-  image       String
+  images      String
   country     String
   description String
   price       Int

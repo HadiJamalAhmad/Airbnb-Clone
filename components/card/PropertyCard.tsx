@@ -8,6 +8,7 @@ import { formatCurrency } from "@/utils/format";
 
 function PropertyCard({ property }: { property: PropertyCardProps }) {
   const { name, image, price } = property;
+  const firstImage = image.split(",")[0];
   const { country, id: propertyId, tagline } = property;
 
   return (
@@ -15,7 +16,7 @@ function PropertyCard({ property }: { property: PropertyCardProps }) {
       <Link href={`/properties/${propertyId}`}>
         <div className="relative h-[300px] mb-2 overflow-hidden rounded-md">
           <Image
-            src={image}
+            src={firstImage}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw"
             alt={name}

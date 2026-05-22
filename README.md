@@ -1,4 +1,4 @@
-# Airbnb Clone
+# Tayibnb
 
 This project is a full-stack clone of Airbnb, built to showcase a modern web application with advanced technologies and robust features.
 
